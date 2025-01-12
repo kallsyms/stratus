@@ -4,7 +4,7 @@ import numpy
 import pygrib
 
 from wx_explore.common.models import Projection
-from wx_explore.common.queue import pq
+from wx_explore.common.task_queue import pq
 from wx_explore.ingest.sources.source import IngestSource
 from wx_explore.web.core import db
 

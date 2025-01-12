@@ -1,9 +1,7 @@
-# Weather Explorer
-(Suggestions for better names are welcome)
-
+# Stratus - Demo App
 
 ## What?
-Weather Explorer is a website that aims to fill the gap between sites like [TWC](https://www.weather.com) which give you data, but no source
+Stratus is a website that aims to fill the gap between sites like [TWC](https://www.weather.com) which give you data, but no source
 information, and detailed analysis sites like
 [NOAA's analysis/model pages](http://www.spc.noaa.gov/exper/),
 [PSU's e-wall](http://mp1.met.psu.edu/~fxg1/ewall.html),
@@ -22,18 +20,24 @@ In the context of the prior example, the most recent HRRR may say the temp at 12
 
 
 ## Why?
+This originally existed as a side project made by Nick Gregory: 
+
+```
 I haven't found a website like this, and I think it would be useful both for meteorologists (the API can be easily integrated into other projects), as well
 as the average person who is just a bit curious about where their daily forecast really comes from.
+```
 
+Now it's being utilized as a medium complexity demo application where we show case the different features of the https://bismuth.sh development platform.
 # Setup
 
 ## Dev
 
-Basically just
+To run the app:
 
 ```sh
 ./dev.sh
-./seed.py
+./wx_explore/common/seed.py
+python3 ./wx_explore/app.py
 ```
 
 `./dev.sh` will build everything into a docker image, create a postgres db, and drop you into a container.

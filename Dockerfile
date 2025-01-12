@@ -9,12 +9,15 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /opt/wx_explore
 WORKDIR /opt/wx_explore
 
-COPY requirements.txt /opt/wx_explore
+COPY requirements.txt setup.py /opt/wx_explore
 
 RUN pip3 install -r requirements.txt
 
-COPY seed.py /opt/wx_explore
 COPY wx_explore /opt/wx_explore/wx_explore
+
+RUN chmod +x /opt/wx_explore/wx_explore/common/seed.py
+RUN pip3 install -e .
+
 COPY data /opt/wx_explore/data
 
 EXPOSE 8080
