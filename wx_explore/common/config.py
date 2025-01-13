@@ -4,11 +4,11 @@ class Config():
     SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
     POSTGRES_USER = os.environ.get('POSTGRES_USER', 'postgres')
     POSTGRES_PASS = os.environ.get('POSTGRES_PASS', 'postgres')
-    POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'db')
-    POSTGRES_PORT = int(os.environ.get('POSTGRES_PORT', 5432))
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+    POSTGRES_PORT = int(os.environ.get('POSTGRES_PORT', 5464))
     POSTGRES_DB = os.environ.get('POSTGRES_DB', 'postgres')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    INGEST_MONGO_SERVER_URI = os.environ.get('INGEST_MONGO_SERVER_URI', 'mongodb://mongo:27017/')
+    INGEST_MONGO_SERVER_URI = os.environ.get('INGEST_MONGO_SERVER_URI', 'mongodb://localhost:27017/')
     INGEST_MONGO_DATABASE = os.environ.get('INGEST_MONGO_DATABASE', 'wx')
     INGEST_MONGO_COLLECTION = os.environ.get('INGEST_MONGO_COLLECTION', 'wx')
 
