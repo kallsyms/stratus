@@ -5,7 +5,7 @@ from typing import Optional
 import argparse
 import logging
 
-from wx_explore.common.logging import init_sentry
+from wx_explore.common.log_setup import init_sentry
 from wx_explore.common.utils import datetime2unix
 from wx_explore.ingest.common import get_queue
 from wx_explore.ingest.sources.source import IngestSource

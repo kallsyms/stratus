@@ -11,5 +11,6 @@ class Config():
     INGEST_MONGO_SERVER_URI = os.environ.get('INGEST_MONGO_SERVER_URI', 'mongodb://localhost:27017/')
     INGEST_MONGO_DATABASE = os.environ.get('INGEST_MONGO_DATABASE', 'wx')
     INGEST_MONGO_COLLECTION = os.environ.get('INGEST_MONGO_COLLECTION', 'wx')
+    SENTRY_ENDPOINT = os.environ.get('SENTRY_ENDPOINT', None)
 
 Config.SQLALCHEMY_DATABASE_URI = f"postgresql://{Config.POSTGRES_USER}:{Config.POSTGRES_PASS}@{Config.POSTGRES_HOST}:{Config.POSTGRES_PORT}/{Config.POSTGRES_DB}"

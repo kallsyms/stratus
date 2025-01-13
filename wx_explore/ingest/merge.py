@@ -2,7 +2,7 @@ import logging
 import numpy
 
 from wx_explore.common import tracing, storage
-from wx_explore.common.logging import init_sentry
+from wx_explore.common.log_setup import init_sentry
 from wx_explore.common.tracing import init_tracing
 
 

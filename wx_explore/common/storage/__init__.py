@@ -72,8 +72,10 @@ def load_data_points(
         end: datetime.datetime,
         source_fields: Optional[Iterable[SourceField]] = None
 ) -> List[DataPointSet]:
+    
+    print(coords, start, end, source_fields)
 
-    if source_fields is None:
+    if source_fields is None or source_fields == []:
         source_fields = SourceField.query.all()
 
     # Determine all valid source fields (fields in source_fields which cover the given coords),
@@ -81,17 +83,22 @@ def load_data_points(
     valid_source_fields = []
     locs: Dict[int, Tuple[float, float]] = {}
     for sf in source_fields:
-        if sf.projection_id in locs and locs[sf.projection_id] is None:
+        if sf.projection_id is None:
             continue
 
+        if sf.projection_id in locs and locs[sf.projection_id] is None:
+            continue
         if sf.projection_id not in locs:
             with tracing.start_span("get_xy_for_coord") as span:
                 span.set_attribute("projection_id", sf.projection_id)
+                print(sf.projection_id)
                 loc = get_xy_for_coord(sf.projection, coords)
 
             # Skip if given projection does not cover coords
             if loc is None:
                 continue
+
+            print(loc)
 
             locs[sf.projection_id] = loc
 

@@ -5,7 +5,7 @@ import logging
 import tempfile
 
 from wx_explore.common import tracing
-from wx_explore.common.logging import init_sentry
+from wx_explore.common.log_setup import init_sentry
 from wx_explore.common.models import Source
 from wx_explore.common.tracing import init_tracing
 from wx_explore.common.utils import url_exists

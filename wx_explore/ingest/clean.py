@@ -4,7 +4,7 @@ from sqlalchemy import func
 import logging
 
 from wx_explore.common import storage
-from wx_explore.common.logging import init_sentry
+from wx_explore.common.log_setup import init_sentry
 from wx_explore.common.models import (
     FileBandMeta,
 )

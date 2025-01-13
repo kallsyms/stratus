@@ -4,7 +4,7 @@ import logging
 import tempfile
 
 from wx_explore.ingest.grib import get_grib_ranges, ingest_grib_file
-from wx_explore.common.logging import init_sentry
+from wx_explore.common.log_setup import init_sentry
 from wx_explore.common.models import Source
 
 init_sentry()
