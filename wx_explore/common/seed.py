@@ -100,7 +100,7 @@ def seed():
                 'idx_short_name': 'SPFH',
                 'idx_level': '2 m above ground',
                 'selectors': {
-                    'name': 'Specific humidity',
+                    'name': '2 metre specific humidity',
                     'typeOfLevel': 'heightAboveGround',
                     'level': 2,
                 },
@@ -120,6 +120,8 @@ def seed():
                 'idx_short_name': 'VGRD',
                 'idx_level': '10 m above ground',
             },
+            # 10m speed + direction are what we show, but are not emitted by any source.
+            # The above U/V components are used to calculate it.
             '10m Wind Speed': {
                 'idx_short_name': 'WIND',
                 'idx_level': '10 m above ground',
@@ -164,11 +166,23 @@ def seed():
                 ))
 
         # customization
+        nam_refc = SourceField.query.filter(
+            SourceField.source.has(short_name='nam'),
+            SourceField.metric == metrics.composite_reflectivity,
+        ).first()
+        nam_refc.idx_level = 'entire atmosphere (considered as a single layer)'
+
         nam_cloud_cover = SourceField.query.filter(
             SourceField.source.has(short_name='nam'),
             SourceField.metric == metrics.cloud_cover,
         ).first()
+        nam_cloud_cover.idx_level = 'entire atmosphere (considered as a single layer)'
         nam_cloud_cover.selectors = {'shortName': 'tcc'}
+
+        SourceField.query.filter(
+            SourceField.source.has(short_name='hrrr'),
+            SourceField.metric == metrics.cloud_cover,
+        ).delete()
 
         db.session.commit()
 

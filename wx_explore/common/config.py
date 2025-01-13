@@ -8,6 +8,7 @@ class Config():
     POSTGRES_PORT = int(os.environ.get('POSTGRES_PORT', 5464))
     POSTGRES_DB = os.environ.get('POSTGRES_DB', 'postgres')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DATA_PROVIDER = "MONGO"
     INGEST_MONGO_SERVER_URI = os.environ.get('INGEST_MONGO_SERVER_URI', 'mongodb://localhost:27017/')
     INGEST_MONGO_DATABASE = os.environ.get('INGEST_MONGO_DATABASE', 'wx')
     INGEST_MONGO_COLLECTION = os.environ.get('INGEST_MONGO_COLLECTION', 'wx')

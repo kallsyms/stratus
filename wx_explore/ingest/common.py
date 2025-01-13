@@ -1,12 +1,14 @@
+from typing import TYPE_CHECKING
 import binascii
 import logging
 import numpy
-import pygrib
 
 from wx_explore.common.models import Projection
 from wx_explore.common.task_queue import pq
-from wx_explore.ingest.sources.source import IngestSource
 from wx_explore.web.core import db
+
+if TYPE_CHECKING:
+    from wx_explore.ingest.sources.source import IngestSource
 
 logger = logging.getLogger(__name__)
 
@@ -57,5 +59,5 @@ def get_source_modules():
     }
 
 
-def get_source_module(short_name: str) -> IngestSource:
+def get_source_module(short_name: str) -> 'IngestSource':
     return get_source_modules()[short_name]

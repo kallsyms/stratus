@@ -1,7 +1,6 @@
 import collections
 import datetime
 import logging
-import numpy
 import pygrib
 
 from wx_explore.common import tracing, storage
@@ -120,7 +119,8 @@ def ingest_grib_file(file_path, source):
         try:
             msgs = grib.select(**field.selectors)
         except ValueError:
-            logger.warning("Could not find message(s) in grib matching selectors %s", field.selectors)
+            if field.selectors.get('shortName') not in ('wind', 'wdir'):
+                logger.warning("Could not find message(s) in grib matching selectors %s", field.selectors)
             continue
 
         for msg in msgs:
