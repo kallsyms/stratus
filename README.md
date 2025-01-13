@@ -44,3 +44,6 @@ python3 ./wx_explore/app.py
 This container has the repo root mounted to `/opt/wx_explore` so code changes can be made on host and immediately tested in the container.
 
 `./seed.py` seeds the database with sources, metrics, and source fields necessary to import data.
+
+## Dev - UI
+`cd ./ui/wx_explore` and run `npm start` this should install all node packages and if you're running the development container begin to communicate with the backend.
