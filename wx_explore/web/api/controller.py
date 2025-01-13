@@ -161,6 +161,8 @@ def wx_for_location():
     start = request.args.get('start', type=int)
     end = request.args.get('end', type=int)
 
+    print("HI")
+
     if start is None:
         start = now - timedelta(hours=1)
     else:
