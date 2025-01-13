@@ -1,0 +1,26 @@
+[chat]
+# Timeout in seconds for commands run by the agent
+command_timeout = 60
+
+# Additional files to be sent to the agent that are normally excluded by .gitignore.
+# These are not saved or persisted anywhere; they are only used during processing.
+additional_files = [".env", ".env.local", ".env.development"]
+
+# File globs that should not be sent to the agent, even if they would be tracked by git.
+# Can be used to hide entire directories from the agent, similar to .dockerignore.
+# Mainly used to avoid accidentally sending large directories like node_modules in the case of a missing or misconfigured .gitignore.
+block_globs = ["**/.*/**", "venv/**", "**/__pycache__/**", "*.pyc", "**/node_modules/**", "**/target/**", "**/dist/**", "**/build/**", "data/**"]
+
+[analysis]
+# How "strict" the static analysis that is done while writing code should be.
+# One of
+#   * NONE (completely disabled)
+#   * SYNTAX (syntax checking only - default)
+#   * NAMES_DEFINED (ensure imports, class names, variable names, etc. are defined)
+#   * FULL (all errors that mypy, eslint, etc. would normally raise)
+strictness = "syntax"
+
+# For Python, the names of optional dependency groups that should be installed for analysis and testing.
+install_groups = ["dev", "test"]
+
+exclude = []
