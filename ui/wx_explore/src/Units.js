@@ -1,9 +1,33 @@
 class UnitConverter {
+    validateValue(val) {
+        if (val === null || val === undefined) {
+            throw new Error('Value cannot be null or undefined');
+        }
+        if (typeof val !== 'number') {
+            throw new Error('Value must be a number');
+        }
+        if (isNaN(val)) {
+            throw new Error('Value cannot be NaN');
+        }
+    }
+
+    validateUnit(unit) {
+        if (unit === null || unit === undefined) {
+            throw new Error('Unit cannot be null or undefined');
+        }
+        if (!this.getSupportedUnits().includes(unit)) {
+            throw new Error(`Unsupported source unit: ${unit}`);
+        }
+    }
+
+    getSupportedUnits() {
+        return Object.keys(this.decimalPlaces);
+    }
+
     round(n, unit) {
         if (unit in this.decimalPlaces) {
             return [Math.round(n * Math.pow(10, this.decimalPlaces[unit])) / Math.pow(10, this.decimalPlaces[unit]), unit];
         }
-
         return [n, unit];
     }
 }
@@ -16,7 +40,14 @@ export class Imperial extends UnitConverter {
         'inHg': 2,
     };
 
+    getSupportedUnits() {
+        return [...super.getSupportedUnits(), 'K', 'm', 'm/s', 'Pa'];
+    }
+
     convert(val, unit) {
+        this.validateValue(val);
+        this.validateUnit(unit);
+        
         switch (unit) {
             case 'K':
                 return this.round(((val - 273.15) * 1.8) + 32, 'F');
@@ -40,7 +71,14 @@ export class Metric extends UnitConverter{
         'Pa': 2,
     };
 
+    getSupportedUnits() {
+        return [...super.getSupportedUnits(), 'K'];
+    }
+
     convert(val, unit) {
+        this.validateValue(val);
+        this.validateUnit(unit);
+        
         switch (unit) {
             case 'K':
                 return this.round(val - 273.15, 'C');
