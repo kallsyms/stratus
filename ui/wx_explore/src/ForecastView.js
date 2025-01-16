@@ -35,70 +35,118 @@ export default class ForecastView extends React.Component {
       source_fields: null,
       summary: null,
       wx: null,
+      error: null,
+      loading: false,
     };
   }
 
   getWx() {
     let t = Math.round((new Date()).getTime() / 1000);
+    
+    this.setState({ loading: true, error: null });
 
-    Api.get("/wx", {
-      params: {
-        lat: this.state.location.lat,
-        lon: this.state.location.lon,
-        start: t,
-        end: t + (3 * 24 * 60 * 60), // 3 days out
-      },
-    }).then(({data}) => this.setState({wx: data}));
-
-    Api.get("/wx/summarize", {
-      params: {
-        lat: this.state.location.lat,
-        lon: this.state.location.lon,
-        days: 1,
-      },
-    }).then(({data}) => this.setState({summary: data}));
+    Promise.all([
+      Api.get("/wx", {
+        params: {
+          lat: this.state.location.lat,
+          lon: this.state.location.lon,
+          start: t,
+          end: t + (3 * 24 * 60 * 60), // 3 days out
+        },
+      }),
+      Api.get("/wx/summarize", {
+        params: {
+          lat: this.state.location.lat,
+          lon: this.state.location.lon,
+          days: 1,
+        },
+      })
+    ]).then(([wxResponse, summaryResponse]) => {
+      this.setState({
+        wx: wxResponse.data,
+        summary: summaryResponse.data,
+        loading: false,
+        error: null
+      });
+    }).catch(error => {
+      this.setState({
+        loading: false,
+        error: error.message || 'Failed to fetch weather data',
+        wx: null,
+        summary: null
+      });
+    });
   }
 
   componentDidMount() {
-    Api.get("/sources").then(({data}) => {
-        let sources = {}
-        let source_fields = {};
-        for (let src of data) {
-            sources[src.id] = src;
-            for (let field of src.fields) {
-                source_fields[field.id] = field;
-            }
+    this.setState({ loading: true, error: null });
+
+    // Load sources and metrics data
+    Promise.all([
+      Api.get("/sources"),
+      Api.get("/metrics")
+    ]).then(([sourcesResponse, metricsResponse]) => {
+      let sources = {};
+      let source_fields = {};
+      for (let src of sourcesResponse.data) {
+        sources[src.id] = src;
+        for (let field of src.fields) {
+          source_fields[field.id] = field;
         }
-        this.setState({sources, source_fields});
+      }
+
+      let metrics = {};
+      for (let metric of metricsResponse.data) {
+        metrics[metric.id] = metric;
+      }
+
+      this.setState({
+        sources,
+        source_fields,
+        metrics,
+        loading: false,
+        error: null
+      });
+    }).catch(error => {
+      this.setState({
+        loading: false,
+        error: error.message || 'Failed to load weather data sources'
+      });
+      return;
     });
 
-    Api.get("/metrics").then(({data}) => {
-        let metrics = {}
-        for (let metric of data) {
-            metrics[metric.id] = metric;
-        }
-        this.setState({metrics});
-    });
-    
+    // Load location data if provided
     if (this.props.match.params.loc_id !== undefined) {
-      Api.get(`/location/${this.props.match.params.loc_id}`).then(({data}) => {
-        this.setState({location: data});
-      });
+      Api.get(`/location/${this.props.match.params.loc_id}`)
+        .then(({data}) => {
+          this.setState({location: data});
+        })
+        .catch(error => {
+          this.setState({
+            error: error.message || 'Failed to load location data'
+          });
+        });
     } else if (this.props.match.params.lat !== undefined && this.props.match.params.lon !== undefined) {
       Api.get("/location/by_coords", {
         params: {
           lat: this.props.match.params.lat,
           lon: this.props.match.params.lon,
         },
-      }).then(({data}) => {
-        this.setState({
-          location: {
-            lat: this.props.match.params.lat,
-            lon: this.props.match.params.lon,
-            name: `Near ${data.name}`,
-          }
+      })
+        .then(({data}) => {
+          this.setState({
+            location: {
+              lat: this.props.match.params.lat,
+              lon: this.props.match.params.lon,
+              name: `Near ${data.name}`,
+            }
+          });
+        })
+        .catch(error => {
+          this.setState({
+            error: error.message || 'Failed to load location data'
+          });
         });
-      });
     }
   }
 
@@ -251,11 +299,37 @@ export default class ForecastView extends React.Component {
   }
 
   render() {
-    if (this.state.summary == null || this.state.sources == null || this.state.source_fields == null || this.state.metrics == null) {
+    // Show error state if there's an error
+    if (this.state.error) {
       return (
-        <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
-        </Spinner>
+        <div className="text-center text-danger p-4">
+          <h3>Error</h3>
+          <p>{this.state.error}</p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => {
+              this.setState({ error: null, loading: false });
+              if (this.state.location) {
+                this.getWx();
+              }
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    // Show loading state while initial data is being fetched
+    if (this.state.loading || this.state.summary == null || this.state.sources == null || 
+        this.state.source_fields == null || this.state.metrics == null) {
+      return (
+        <div className="text-center p-4">
+          <Spinner animation="border" role="status">
+            <span className="sr-only">Loading...</span>
+          </Spinner>
+          <p className="mt-2">Loading weather data...</p>
+        </div>
       );
     }
 
@@ -263,9 +337,12 @@ export default class ForecastView extends React.Component {
 
     if (this.state.wx == null) {
       charts.push(
-        <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
-        </Spinner>
+        <div key="loading-charts" className="text-center p-4">
+          <Spinner animation="border" role="status">
+            <span className="sr-only">Loading...</span>
+          </Spinner>
+          <p className="mt-2">Loading forecast charts...</p>
+        </div>
       );
     } else {
       let datasets = this.chartjsData();
