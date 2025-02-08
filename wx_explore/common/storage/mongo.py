@@ -8,6 +8,7 @@ import numpy
 import pymongo
 import pytz
 import zlib
+import lzma
 
 from . import DataProvider
 from wx_explore.common import tracing
@@ -66,7 +67,15 @@ class MongoBackend(DataProvider):
                 if key not in item or item[key] is None:
                     continue
 
-                raw = zlib.decompress(item[key])
+                compressed_data = item[key]
+                # Check if data is in new format (prefixed with compression type)
+                if isinstance(compressed_data, dict) and 'format' in compressed_data:
+                    if compressed_data['format'] == 'lzma':
+                        raw = lzma.decompress(compressed_data['data'])
+                    else:  # fallback to zlib
+                        raw = zlib.decompress(compressed_data['data'])
+                else:  # legacy format - assume zlib
+                    raw = zlib.decompress(compressed_data)
                 val = array.array("f", raw).tolist()[rel_x]
 
                 data_point = DataPointSet(
@@ -116,7 +125,11 @@ class MongoBackend(DataProvider):
 
                     for msg in msgs:
                         # XXX: this only keeps last msg per field breaking ensembles
-                        rows[row_key][f"sf{field_id}"] = zlib.compress(msg[y][x:x+self.n_x_per_row].astype(numpy.float32).tobytes())
+                        compressed_data = lzma.compress(msg[y][x:x+self.n_x_per_row].astype(numpy.float32).tobytes())
+                        rows[row_key][f"sf{field_id}"] = {
+                            'format': 'lzma',
+                            'data': compressed_data
+                        }
 
         with tracing.start_span('put_fields saving') as span:
             self.collection.insert_many(rows.values())
@@ -132,3 +145,59 @@ class MongoBackend(DataProvider):
 
     def merge(self):
         pass
+
+    def migrate_to_lzma(self, batch_size: int = 1000):
+        """
+        Migrate existing zlib compressed data to lzma format.
+        This method processes documents in batches to avoid memory issues.
+        
+        Args:
+            batch_size: Number of documents to process in each batch
+        """
+        self.logger.info("Starting migration from zlib to lzma compression")
+        
+        with tracing.start_span('migrate_to_lzma'):
+            cursor = self.collection.find({})
+            total_processed = 0
+            
+            while True:
+                batch = list(cursor.limit(batch_size))
+                if not batch:
+                    break
+                    
+                updates = []
+                for doc in batch:
+                    doc_updates = {}
+                    for key, value in doc.items():
+                        if key.startswith('sf') and value is not None:
+                            # Skip if already in new format
+                            if isinstance(value, dict) and 'format' in value:
+                                continue
+                                
+                            try:
+                                # Decompress with zlib and recompress with lzma
+                                raw_data = zlib.decompress(value)
+                                compressed_data = lzma.compress(raw_data)
+                                doc_updates[key] = {
+                                    'format': 'lzma',
+                                    'data': compressed_data
+                                }
+                            except Exception as e:
+                                self.logger.error(f"Failed to migrate field {key} in document {doc['_id']}: {e}")
+                                continue
+                    
+                    if doc_updates:
+                        updates.append(pymongo.UpdateOne(
+                            {'_id': doc['_id']},
+                            {'$set': doc_updates}
+                        ))
+                
+                if updates:
+                    try:
+                        self.collection.bulk_write(updates)
+                        total_processed += len(updates)
+                        self.logger.info(f"Migrated {total_processed} documents to lzma compression")
+                    except Exception as e:
+                        self.logger.error(f"Failed to update batch: {e}")
+                
+            self.logger.info(f"Migration complete. Total documents processed: {total_processed}")
