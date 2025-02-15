@@ -7,7 +7,7 @@ import logging
 import numpy
 import pymongo
 import pytz
-import zlib
+import lzma
 
 from . import DataProvider
 from wx_explore.common import tracing
