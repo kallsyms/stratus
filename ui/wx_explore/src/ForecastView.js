@@ -6,6 +6,7 @@ import Col from 'react-bootstrap/Col';
 import Spinner from 'react-bootstrap/Spinner';
 
 import Api from './Api';
+import './ErrorBarPlugin';
 
 const lineColors = {
   'hrrr': '255,0,0',
@@ -138,8 +139,12 @@ export default class ForecastView extends React.Component {
           metrics[metric.id][source.id][data_point.run_time] = [];
         }
 
-        const [val, ] = this.props.converter.convert(data_point.value, metric.units);
-        metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        const [val, errorMargin] = this.props.converter.convert(data_point.value, metric.units);
+        metrics[metric.id][source.id][data_point.run_time].push({
+          x: new Date(ts * 1000), 
+          y: val,
+          errorBar: errorMargin
+        });
       }
     }
 
@@ -180,6 +185,18 @@ export default class ForecastView extends React.Component {
             backgroundColor: color,
             borderColor: color,
             pointBorderColor: color,
+            // Error bar configuration
+            errorBars: {
+              show: true,
+              color: color,
+              lineWidth: 1,
+              tipWidth: 6
+            },
+            // Custom plugin to draw error bars
+            errorBarData: metrics[metric_id][source_id][run_time].map(point => ({
+              plus: point.errorBar,
+              minus: point.errorBar
+            }))
           });
         }
       }
