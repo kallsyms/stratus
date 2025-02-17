@@ -120,11 +120,24 @@ export default class ForecastView extends React.Component {
   chartjsData() {
     let metrics = {}; // map[metric_id, map[source_id, map[run_time, list]]] 
 
+    // Check if required data exists
+    if (!this.state.wx || !this.state.wx.ordered_times || !this.state.wx.data) {
+      return {};
+    }
+
     for (const ts of this.state.wx.ordered_times) {
+      if (!this.state.wx.data[ts]) continue;
+
       for (const data_point of this.state.wx.data[ts]) {
-        const source_field = this.state.source_fields[data_point.src_field_id]
-        const metric = this.state.metrics[source_field.metric_id];
-        const source = this.state.sources[source_field.source_id];
+        // Skip invalid data points
+        if (!data_point || !data_point.src_field_id || !data_point.value) continue;
+
+        const source_field = this.state.source_fields?.[data_point.src_field_id];
+        if (!source_field || !source_field.metric_id || !source_field.source_id) continue;
+
+        const metric = this.state.metrics?.[source_field.metric_id];
+        const source = this.state.sources?.[source_field.source_id];
+        if (!metric || !source || !metric.id || !source.id || !metric.units) continue;
 
         if (!(metric.id in metrics)) {
           metrics[metric.id] = {};
@@ -138,8 +151,13 @@ export default class ForecastView extends React.Component {
           metrics[metric.id][source.id][data_point.run_time] = [];
         }
 
-        const [val, ] = this.props.converter.convert(data_point.value, metric.units);
-        metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        try {
+          const [val, ] = this.props.converter.convert(data_point.value, metric.units);
+          metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        } catch (error) {
+          console.warn('Error converting value:', error);
+          continue;
+        }
       }
     }
 
@@ -189,27 +207,46 @@ export default class ForecastView extends React.Component {
   }
 
   coreMetricsBox(day) {
-    const summary = this.state.summary[day];
+    // Return early if summary is not available
+    if (!this.state.summary || !this.state.summary[day]) {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md={3}>
+            <p>Weather data not available</p>
+          </Col>
+        </Row>
+      );
+    }
 
-    let cloudCoverIcon = '';
-    switch (summary.cloud_cover[0].cover) {
-      case 'clear':
-        cloudCoverIcon = 'wi-day-sunny';
-        break;
-      case 'mostly clear':
-        cloudCoverIcon = 'wi-day-sunny';
-        break;
-      case 'partly cloudy':
-        cloudCoverIcon = 'wi-day-cloudy-high';
-        break;
-      case 'mostly cloudy':
-        cloudCoverIcon = 'wi-cloud';
-        break;
-      case 'cloudy':
-        cloudCoverIcon = 'wi-cloudy';
-        break;
-      default:
-        cloudCoverIcon = 'wi-alien'; // idk
+    const summary = this.state.summary[day];
+    
+    // Check if required data exists
+    const hasCloudCover = summary.cloud_cover && summary.cloud_cover[0] && summary.cloud_cover[0].cover;
+    const hasTemps = summary.temps && summary.temps[0] && summary.temps[0].temperature;
+    const hasHigh = summary.high && summary.high.temperature;
+    const hasLow = summary.low && summary.low.temperature;
+
+    let cloudCoverIcon = 'wi-alien'; // default icon
+    if (hasCloudCover) {
+      switch (summary.cloud_cover[0].cover) {
+        case 'clear':
+          cloudCoverIcon = 'wi-day-sunny';
+          break;
+        case 'mostly clear':
+          cloudCoverIcon = 'wi-day-sunny';
+          break;
+        case 'partly cloudy':
+          cloudCoverIcon = 'wi-day-cloudy-high';
+          break;
+        case 'mostly cloudy':
+          cloudCoverIcon = 'wi-cloud';
+          break;
+        case 'cloudy':
+          cloudCoverIcon = 'wi-cloudy';
+          break;
+        default:
+          cloudCoverIcon = 'wi-alien';
+      }
     }
 
     return (
@@ -218,18 +255,30 @@ export default class ForecastView extends React.Component {
           <i style={{fontSize: "7em"}} className={"wi " + cloudCoverIcon}></i>
         </Col>
         <Col md={3}>
-          <h4>{this.props.converter.convert(summary.temps[0].temperature, 'K')} {capitalize(summary.cloud_cover[0].cover)}</h4>
-          <p>High: {this.props.converter.convert(summary.high.temperature, 'K')}</p>
-          <p>Low: {this.props.converter.convert(summary.low.temperature, 'K')}</p>
+          {hasTemps && hasCloudCover && (
+            <h4>
+              {this.props.converter.convert(summary.temps[0].temperature, 'K')} {capitalize(summary.cloud_cover[0].cover)}
+            </h4>
+          )}
+          {hasHigh && <p>High: {this.props.converter.convert(summary.high.temperature, 'K')}</p>}
+          {hasLow && <p>Low: {this.props.converter.convert(summary.low.temperature, 'K')}</p>}
+          {!hasTemps && !hasHigh && !hasLow && <p>Temperature data not available</p>}
         </Col>
       </Row>
     );
   }
 
   summarize(day) {
+    // Return early if summary data is not available
+    if (!this.state.summary || !this.state.summary[day] || !this.state.summary[day].summary || !this.state.summary[day].summary.components) {
+      return <span>Forecast summary not available</span>;
+    }
+
     let components = [];
 
     for (const [index, component] of this.state.summary[day].summary.components.entries()) {
+      if (!component || !component.text) continue;
+
       let text = '';
       if (index === 0) {
         text = capitalize(component.text);
@@ -238,15 +287,13 @@ export default class ForecastView extends React.Component {
       }
       text += ' ';
 
-      if (component.type === 'text') {
-        components.push(<span key={index}>{text}</span>);
-      } else {
-        components.push(<span key={index}>{text}</span>);
-      }
+      components.push(<span key={index}>{text}</span>);
     }
 
-    return (
+    return components.length > 0 ? (
       <span>{components}</span>
+    ) : (
+      <span>Forecast summary not available</span>
     );
   }
 
@@ -310,11 +357,22 @@ export default class ForecastView extends React.Component {
       };
     }
 
+    // Check if location exists before rendering
+    if (!this.state.location) {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md={3}>
+            <p>Location data not available</p>
+          </Col>
+        </Row>
+      );
+    }
+
     return (
       <div>
         <Row className="justify-content-md-center">
           <Col md="auto">
-            <h2>{this.state.location.name}</h2>
+            <h2>{this.state.location.name || 'Unknown Location'}</h2>
           </Col>
         </Row>
         {this.coreMetricsBox(0)}
