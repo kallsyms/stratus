@@ -52,3 +52,4 @@ services:
       - ./ui/wx_explore/src:/app/src
     environment:
       REACT_APP_API_ENDPOINT: 'http://localhost:5000/api'
+      #REACT_APP_API_ENDPOINT: 'https://api.vortexweather.tech/api'  # live endpoint which should already have data
