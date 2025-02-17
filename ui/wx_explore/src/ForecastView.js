@@ -139,7 +139,14 @@ export default class ForecastView extends React.Component {
         }
 
         const [val, ] = this.props.converter.convert(data_point.value, metric.units);
-        metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        const [max, ] = this.props.converter.convert(data_point.max, metric.units);
+        const [min, ] = this.props.converter.convert(data_point.min, metric.units);
+        metrics[metric.id][source.id][data_point.run_time].push({
+          x: new Date(ts * 1000), 
+          y: val,
+          yMin: min,
+          yMax: max
+        });
       }
     }
 
@@ -180,6 +187,13 @@ export default class ForecastView extends React.Component {
             backgroundColor: color,
             borderColor: color,
             pointBorderColor: color,
+            errorBar: {
+              yMin: 'yMin',
+              yMax: 'yMax',
+              color: color,
+              lineWidth: 1,
+              tipWidth: 4
+            }
           });
         }
       }
@@ -286,6 +300,13 @@ export default class ForecastView extends React.Component {
         legend: {
           display: false,
         },
+        plugins: {
+          errorBars: {
+            enabled: true,
+            lineWidth: 1,
+            tipWidth: 4
+          }
+        }
       };
 
       for (const metric_id in datasets) {
@@ -301,7 +322,7 @@ export default class ForecastView extends React.Component {
           },
         };
         charts.push(
-          <Row>
+          <Row key={`chart-${metric.id}`}>
             <Col>
               <LineChart key={metric.name} data={data} options={opts}/>
             </Col>
