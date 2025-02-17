@@ -26,7 +26,7 @@ export class Imperial extends UnitConverter {
                 return this.round(val * 2.237, 'mph');
             case 'Pa':
                 return this.round(val * 0.0002953, 'inHg');
-            default:
+            default: // deg (wind direction), dbZ (radar refl), % (cloud cover)
                 return this.round(val, unit);
         }
     }
