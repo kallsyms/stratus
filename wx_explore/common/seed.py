@@ -23,18 +23,27 @@ def seed():
                 name='HRRR 2D Surface Data (Sub-Hourly)',
                 src_url='http://www.nco.ncep.noaa.gov/pmb/products/hrrr/',
                 last_updated=None,
+                coverage_area="Continental United States",
+                update_frequency="Hourly",
+                resolution="3km",
             ),
             Source(
                 short_name='nam',
                 name='North American Model',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/nam/',
                 last_updated=None,
+                coverage_area="North America",
+                update_frequency="Every 6 hours", 
+                resolution="12km",
             ),
             Source(
                 short_name='gfs',
                 name='Global Forecast System',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/gfs/',
                 last_updated=None,
+                coverage_area="Global",
+                update_frequency="Every 6 hours",
+                resolution="0.25 degree",
             ),
         ]
 

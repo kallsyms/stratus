@@ -35,6 +35,9 @@ class Source(Base):
     name = Column(String(128), unique=True)
     src_url = Column(String(1024))
     last_updated = Column(DateTime)
+    coverage_area = Column(String(256), nullable=False)  # e.g. "Continental United States", "Global"
+    update_frequency = Column(String(128), nullable=False)  # e.g. "Hourly", "Every 6 hours"
+    resolution = Column(String(128), nullable=False)  # e.g. "3km", "0.5 degree"
 
     # Fields are backref'd
 
@@ -45,6 +48,9 @@ class Source(Base):
             "name": self.name,
             "src_url": self.src_url,
             "last_updated": self.last_updated,
+            "coverage_area": self.coverage_area,
+            "update_frequency": self.update_frequency,
+            "resolution": self.resolution,
         }
 
     def __repr__(self):
