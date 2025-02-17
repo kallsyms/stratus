@@ -35,6 +35,8 @@ services:
       POSTGRES_HOST: 'db'
       POSTGRES_PORT: '5432'
       INGEST_MONGO_SERVER_URI: 'mongodb://mongo:27017/'
+    volumes:
+      - ./wx_explore:/opt/wx_explore/wx_explore
     depends_on:
       db:
         condition: service_healthy
@@ -45,5 +47,7 @@ services:
     build: ui/wx_explore
     ports:
       - "3000:3000"
+    volumes:
+      - ./ui/wx_explore/src:/app/src
     environment:
       REACT_APP_API_ENDPOINT: 'http://localhost:5000/api'
