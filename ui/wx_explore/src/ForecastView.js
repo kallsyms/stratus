@@ -180,6 +180,11 @@ export default class ForecastView extends React.Component {
             backgroundColor: color,
             borderColor: color,
             pointBorderColor: color,
+            // Error bar styling
+            errorBarWhiskerWidth: 2,
+            errorBarColor: color,
+            errorBarLineWidth: 1,
+            errorBarWhiskerColor: color,
           });
         }
       }
@@ -286,6 +291,14 @@ export default class ForecastView extends React.Component {
         legend: {
           display: false,
         },
+        plugins: {
+          chartJsPluginErrorBars: {
+            enabled: true,
+            color: 'inherit', // Use the dataset color
+            width: 2,
+            lineWidth: 1,
+          }
+        }
       };
 
       for (const metric_id in datasets) {
