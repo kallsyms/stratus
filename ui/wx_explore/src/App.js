@@ -12,14 +12,32 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 import ForecastView from "./ForecastView";
 import LocationSearchField from "./LocationSearch";
-import { Imperial } from "./Units";
+import { Imperial, Metric } from "./Units";
 
 import "./App.css";
 
 class App extends React.Component {
-  state = {
-    location: null,
-    unitConverter: new Imperial(),
+  constructor(props) {
+    super(props);
+    // Initialize state with stored unit preference or default to Imperial
+    const storedUnit = localStorage.getItem('temperatureUnit') || 'imperial';
+    this.state = {
+      location: null,
+      unitConverter: storedUnit === 'imperial' ? new Imperial() : new Metric(),
+      temperatureUnit: storedUnit
+    };
+  }
+
+  toggleUnit = () => {
+    const newUnit = this.state.temperatureUnit === 'imperial' ? 'metric' : 'imperial';
+    const newConverter = newUnit === 'imperial' ? new Imperial() : new Metric();
+    
+    // Update state and persist to localStorage
+    this.setState({
+      unitConverter: newConverter,
+      temperatureUnit: newUnit
+    });
+    localStorage.setItem('temperatureUnit', newUnit);
   };
 
   render() {
@@ -40,12 +58,22 @@ class App extends React.Component {
           <Navbar.Brand>Stratus - Demo App</Navbar.Brand>
           <Nav className="mr-auto"></Nav>
 
-          <Form inline>
+          <Form inline className="mr-3">
             <LocationSearchField
               onChange={(selected) => {
                 const { id } = selected[0];
                 this.props.history.push(`/id/${id}`);
               }}
+            />
+          </Form>
+          <Form inline>
+            <Form.Check
+              type="switch"
+              id="unit-toggle"
+              label={this.state.temperatureUnit === 'imperial' ? "degF" : "degC"}
+              checked={this.state.temperatureUnit === 'metric'}
+              onChange={this.toggleUnit}
+              className="text-light"
             />
           </Form>
         </Navbar>

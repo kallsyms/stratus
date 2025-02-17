@@ -108,8 +108,8 @@ export default class ForecastView extends React.Component {
       return;
     }
     
-    // ... or when location changed
-    if (prevState.location === this.state.location) {
+    // Refresh data when location changes or unit converter changes
+    if (prevState.location === this.state.location && prevProps.converter === this.props.converter) {
       return;
     }
 
@@ -138,7 +138,15 @@ export default class ForecastView extends React.Component {
           metrics[metric.id][source.id][data_point.run_time] = [];
         }
 
-        const [val, ] = this.props.converter.convert(data_point.value, metric.units);
+        const [val, unit] = this.props.converter.convert(data_point.value, metric.units);
+        if (unit === 'F' || unit === 'C') {
+            opts.scales.yAxes = [{
+                scaleLabel: {
+                    display: true,
+                    labelString: `Temperature (deg${unit})`
+                }
+            }];
+        }
         metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
       }
     }
@@ -218,9 +226,9 @@ export default class ForecastView extends React.Component {
           <i style={{fontSize: "7em"}} className={"wi " + cloudCoverIcon}></i>
         </Col>
         <Col md={3}>
-          <h4>{this.props.converter.convert(summary.temps[0].temperature, 'K')} {capitalize(summary.cloud_cover[0].cover)}</h4>
-          <p>High: {this.props.converter.convert(summary.high.temperature, 'K')}</p>
-          <p>Low: {this.props.converter.convert(summary.low.temperature, 'K')}</p>
+          <h4>{this.props.converter.convert(summary.temps[0].temperature, 'K')[0]} {capitalize(summary.cloud_cover[0].cover)}</h4>
+          <p>High: {this.props.converter.convert(summary.high.temperature, 'K')[0]}</p>
+          <p>Low: {this.props.converter.convert(summary.low.temperature, 'K')[0]}</p>
         </Col>
       </Row>
     );
@@ -282,6 +290,12 @@ export default class ForecastView extends React.Component {
               max: moment().add(3, 'days'),
             },
           }],
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: metric_id === "1" ? `Temperature (deg${this.props.converter.convert(0, 'K')[1]})` : ''
+            }
+          }]
         },
         legend: {
           display: false,
