@@ -108,11 +108,20 @@ export default class ForecastView extends React.Component {
       return;
     }
     
-    // ... or when location changed
-    if (prevState.location === this.state.location) {
+    // Fetch when location changes or when unit converter changes
+    if (prevState.location === this.state.location && 
+        prevProps.converter.constructor === this.props.converter.constructor) {
       return;
     }
 
+    // If only the unit converter changed, just trigger a re-render
+    if (prevState.location === this.state.location && 
+        prevProps.converter.constructor !== this.props.converter.constructor) {
+      this.forceUpdate();
+      return;
+    }
+
+    // Location changed, need to fetch new data
     this.setState({wx: null, summary: null});
     this.getWx();
   }
@@ -218,9 +227,9 @@ export default class ForecastView extends React.Component {
           <i style={{fontSize: "7em"}} className={"wi " + cloudCoverIcon}></i>
         </Col>
         <Col md={3}>
-          <h4>{this.props.converter.convert(summary.temps[0].temperature, 'K')} {capitalize(summary.cloud_cover[0].cover)}</h4>
-          <p>High: {this.props.converter.convert(summary.high.temperature, 'K')}</p>
-          <p>Low: {this.props.converter.convert(summary.low.temperature, 'K')}</p>
+          <h4>{(() => { const [val, unit] = this.props.converter.convert(summary.temps[0].temperature, 'K'); return `${val}deg${unit}`; })()} {capitalize(summary.cloud_cover[0].cover)}</h4>
+          <p>High: {(() => { const [val, unit] = this.props.converter.convert(summary.high.temperature, 'K'); return `${val}deg${unit}`; })()}</p>
+          <p>Low: {(() => { const [val, unit] = this.props.converter.convert(summary.low.temperature, 'K'); return `${val}deg${unit}`; })()}</p>
         </Col>
       </Row>
     );
@@ -293,11 +302,12 @@ export default class ForecastView extends React.Component {
         const data = {
           datasets: datasets[metric_id],
         };
+        const [, unit] = this.props.converter.convert(0, metric.units);
         let opts = {
           ...options,
           title: {
             display: true,
-            text: metric.name,
+            text: `${metric.name} (${unit})`,
           },
         };
         charts.push(

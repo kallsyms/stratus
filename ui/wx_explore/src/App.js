@@ -12,14 +12,31 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 import ForecastView from "./ForecastView";
 import LocationSearchField from "./LocationSearch";
-import { Imperial } from "./Units";
+import { Imperial, Metric } from "./Units";
 
 import "./App.css";
 
 class App extends React.Component {
-  state = {
-    location: null,
-    unitConverter: new Imperial(),
+  constructor(props) {
+    super(props);
+    const storedPreference = localStorage.getItem('preferMetric');
+    const preferMetric = storedPreference === null ? false : storedPreference === 'true';
+    this.state = {
+      location: null,
+      unitConverter: preferMetric ? new Metric() : new Imperial(),
+    };
+    // Ensure the preference is stored even on first load
+    if (storedPreference === null) {
+      localStorage.setItem('preferMetric', 'false');
+    }
+  }
+
+  toggleUnits = () => {
+    const newPreferMetric = !(this.state.unitConverter instanceof Metric);
+    localStorage.setItem('preferMetric', String(newPreferMetric));
+    this.setState({
+      unitConverter: newPreferMetric ? new Metric() : new Imperial(),
+    });
   };
 
   render() {
@@ -46,6 +63,14 @@ class App extends React.Component {
                 const { id } = selected[0];
                 this.props.history.push(`/id/${id}`);
               }}
+            />
+            <Form.Check
+              type="switch"
+              id="unit-toggle"
+              label={this.state.unitConverter instanceof Metric ? "degC" : "degF"}
+              checked={this.state.unitConverter instanceof Metric}
+              onChange={this.toggleUnits}
+              className="ml-3 text-light"
             />
           </Form>
         </Navbar>

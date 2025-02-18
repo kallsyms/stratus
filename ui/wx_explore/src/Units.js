@@ -44,6 +44,12 @@ export class Metric extends UnitConverter{
         switch (unit) {
             case 'K':
                 return this.round(val - 273.15, 'C');
+            case 'm':
+                return this.round(val, 'm');
+            case 'm/s':
+                return this.round(val, 'm/s');
+            case 'Pa':
+                return this.round(val, 'Pa');
             default:
                 return this.round(val, unit);
         }
