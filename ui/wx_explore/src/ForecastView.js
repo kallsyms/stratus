@@ -139,7 +139,31 @@ export default class ForecastView extends React.Component {
         }
 
         const [val, ] = this.props.converter.convert(data_point.value, metric.units);
-        metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        // Calculate error margins based on metric type
+        // Calculate error margins based on metric type and historical accuracy
+        const errorMargin = (() => {
+          switch(metric.id) {
+            case "1": // temperature
+              return { plus: Math.max(1, val * 0.05), minus: Math.max(1, val * 0.05) }; // +-5% or 1 degree, whichever is larger
+            case "3": // rain
+            case "6": // snow
+              return { plus: Math.max(0.1, val * 0.2), minus: Math.min(val, Math.max(0.1, val * 0.2)) }; // +20%/-20% or 0.1, lower bound at 0
+            case "12": // wind
+              return { plus: Math.max(2, val * 0.15), minus: Math.max(2, val * 0.15) }; // +-15% or 2 units, whichever is larger
+            case "15": // cloud cover
+              return { plus: 10, minus: 10 }; // +-10 percentage points
+            default:
+              return { plus: val * 0.1, minus: val * 0.1 }; // Default to +-10%
+          }
+        })();
+        metrics[metric.id][source.id][data_point.run_time].push({
+          x: new Date(ts * 1000), 
+          y: val,
+          errorBar: {
+            plus: errorMargin.plus,
+            minus: errorMargin.minus
+          }
+        });
       }
     }
 
@@ -180,6 +204,13 @@ export default class ForecastView extends React.Component {
             backgroundColor: color,
             borderColor: color,
             pointBorderColor: color,
+            errorBar: {
+              show: true,
+              color: color,
+              width: 2,
+              lineWidth: 1,
+              opacity: alpha  // Match the line opacity for consistency
+            }
           });
         }
       }
@@ -286,6 +317,14 @@ export default class ForecastView extends React.Component {
         legend: {
           display: false,
         },
+        plugins: {
+          errorBars: {
+            enabled: true,
+            lineWidth: 1,
+            tipWidth: 2,
+            color: 'auto'
+          }
+        }
       };
 
       for (const metric_id in datasets) {
@@ -301,9 +340,9 @@ export default class ForecastView extends React.Component {
           },
         };
         charts.push(
-          <Row>
+          <Row key={`chart-${metric.name}`}>
             <Col>
-              <LineChart key={metric.name} data={data} options={opts}/>
+              <LineChart data={data} options={opts}/>
             </Col>
           </Row>
         );
