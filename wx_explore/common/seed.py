@@ -23,18 +23,27 @@ def seed():
                 name='HRRR 2D Surface Data (Sub-Hourly)',
                 src_url='http://www.nco.ncep.noaa.gov/pmb/products/hrrr/',
                 last_updated=None,
+                coverage_area='Continental United States (CONUS)',
+                update_frequency='Hourly, with sub-hourly forecasts',
+                resolution='3km grid spacing',
             ),
             Source(
                 short_name='nam',
                 name='North American Model',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/nam/',
                 last_updated=None,
+                coverage_area='North America and surrounding waters',
+                update_frequency='Four times daily (00Z, 06Z, 12Z, 18Z)',
+                resolution='12km grid spacing for main domain',
             ),
             Source(
                 short_name='gfs',
                 name='Global Forecast System',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/gfs/',
                 last_updated=None,
+                coverage_area='Global',
+                update_frequency='Four times daily (00Z, 06Z, 12Z, 18Z)',
+                resolution='0.25 degree (~25km) grid spacing',
             ),
         ]
 
@@ -159,10 +168,12 @@ def seed():
 
         for src in sources:
             for metric in metrics.ALL_METRICS:
+                # Check if the metric name exists in metric_meta and use an empty dict as fallback
+                meta_dict = metric_meta.get(metric.name, {})
                 get_or_create(SourceField(
                     source_id=src.id,
                     metric_id=metric.id,
-                    **metric_meta[metric.name],
+                    **meta_dict,
                 ))
 
         # customization
