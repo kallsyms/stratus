@@ -35,6 +35,9 @@ class Source(Base):
     name = Column(String(128), unique=True)
     src_url = Column(String(1024))
     last_updated = Column(DateTime)
+    coverage_area = Column(String(1024))
+    update_frequency = Column(String(256))
+    resolution = Column(String(256))
 
     # Fields are backref'd
 
@@ -45,6 +48,9 @@ class Source(Base):
             "name": self.name,
             "src_url": self.src_url,
             "last_updated": self.last_updated,
+            "coverage_area": self.coverage_area,
+            "update_frequency": self.update_frequency,
+            "resolution": self.resolution,
         }
 
     def __repr__(self):

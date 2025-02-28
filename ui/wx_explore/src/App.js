@@ -12,6 +12,7 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 import ForecastView from "./ForecastView";
 import LocationSearchField from "./LocationSearch";
+import Sources from "./Sources";
 import { Imperial } from "./Units";
 
 import "./App.css";
@@ -38,7 +39,9 @@ class App extends React.Component {
       <div className="App">
         <Navbar bg="dark" variant="dark">
           <Navbar.Brand>Stratus - Demo App</Navbar.Brand>
-          <Nav className="mr-auto"></Nav>
+          <Nav className="mr-auto">
+            <Nav.Link href="/sources">Weather Models</Nav.Link>
+          </Nav>
 
           <Form inline>
             <LocationSearchField
@@ -64,6 +67,7 @@ class App extends React.Component {
                 <ForecastView converter={this.state.unitConverter} {...props} />
               )}
             />
+            <Route path={`/sources`} component={Sources} />
 
             <Route path="/">
               <Row className="justify-content-md-center">
