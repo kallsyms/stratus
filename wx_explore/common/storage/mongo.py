@@ -4,10 +4,10 @@ import array
 import concurrent.futures
 import datetime
 import logging
+import lzma
 import numpy
 import pymongo
 import pytz
-import zlib
 
 from . import DataProvider
 from wx_explore.common import tracing
@@ -66,7 +66,7 @@ class MongoBackend(DataProvider):
                 if key not in item or item[key] is None:
                     continue
 
-                raw = zlib.decompress(item[key])
+                raw = lzma.decompress(item[key])
                 val = array.array("f", raw).tolist()[rel_x]
 
                 data_point = DataPointSet(
@@ -116,7 +116,8 @@ class MongoBackend(DataProvider):
 
                     for msg in msgs:
                         # XXX: this only keeps last msg per field breaking ensembles
-                        rows[row_key][f"sf{field_id}"] = zlib.compress(msg[y][x:x+self.n_x_per_row].astype(numpy.float32).tobytes())
+                        # Configure lzma compression level for better compression ratio
+                        rows[row_key][f"sf{field_id}"] = lzma.compress(msg[y][x:x+self.n_x_per_row].astype(numpy.float32).tobytes(), preset=6)
 
         with tracing.start_span('put_fields saving') as span:
             self.collection.insert_many(rows.values())
