@@ -34,6 +34,7 @@ class Source(Base):
     short_name = Column(String(8), unique=True)
     name = Column(String(128), unique=True)
     src_url = Column(String(1024))
+    explanation = Column(String(1024))  # Human-readable explanation of coverage area, update frequency, and resolution
     last_updated = Column(DateTime)
 
     # Fields are backref'd
@@ -44,6 +45,7 @@ class Source(Base):
             "short_name": self.short_name,
             "name": self.name,
             "src_url": self.src_url,
+            "explanation": self.explanation,
             "last_updated": self.last_updated,
         }
 
