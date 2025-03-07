@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
@@ -12,6 +12,37 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 import ForecastView from "./ForecastView";
 import LocationSearchField from "./LocationSearch";
+// TODO: Create SourcesView component
+// Placeholder until SourcesView.js is created
+const SourcesView = () => {
+  const [sources, setSources] = useState([]);
+  
+  useEffect(() => {
+    fetch("/api/sources")
+      .then(response => response.json())
+      .then(data => setSources(data))
+      .catch(error => console.error("Error fetching sources:", error));
+  }, []);
+
+  return (
+    <div>
+      <h2>Weather Data Sources</h2>
+      {sources.length === 0 ? (
+        <p>Loading sources...</p>
+      ) : (
+        sources.map(source => (
+          <div key={source.id} className="source-card mb-4">
+            <h3>{source.name}</h3>
+            <p><strong>Source URL:</strong> <a href={source.src_url} target="_blank" rel="noopener noreferrer">{source.src_url}</a></p>
+            <p><strong>Details:</strong> {source.explanation}</p>
+            <p><small>Last updated: {new Date(source.last_updated).toLocaleString()}</small></p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
 import { Imperial } from "./Units";
 
 import "./App.css";
@@ -38,7 +69,9 @@ class App extends React.Component {
       <div className="App">
         <Navbar bg="dark" variant="dark">
           <Navbar.Brand>Stratus - Demo App</Navbar.Brand>
-          <Nav className="mr-auto"></Nav>
+          <Nav className="mr-auto">
+            <Nav.Link href="/sources">Data Sources</Nav.Link>
+          </Nav>
 
           <Form inline>
             <LocationSearchField
@@ -63,6 +96,10 @@ class App extends React.Component {
               component={(props) => (
                 <ForecastView converter={this.state.unitConverter} {...props} />
               )}
+            />
+            <Route
+              path={`/sources`}
+              component={SourcesView}
             />
 
             <Route path="/">

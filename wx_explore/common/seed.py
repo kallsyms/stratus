@@ -22,18 +22,21 @@ def seed():
                 short_name='hrrr',
                 name='HRRR 2D Surface Data (Sub-Hourly)',
                 src_url='http://www.nco.ncep.noaa.gov/pmb/products/hrrr/',
+                explanation='Coverage area: Continental United States (CONUS). Update frequency: Hourly updates with forecasts out to 18 hours. Resolution: 3km grid spacing, providing high-resolution forecasts for short-term weather events.',
                 last_updated=None,
             ),
             Source(
                 short_name='nam',
                 name='North American Model',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/nam/',
+                explanation='Coverage area: North America and surrounding waters. Update frequency: Four times daily (00Z, 06Z, 12Z, 18Z) with forecasts out to 84 hours. Resolution: 12km grid spacing for the primary domain, providing medium-resolution continental forecasts.',
                 last_updated=None,
             ),
             Source(
                 short_name='gfs',
                 name='Global Forecast System',
                 src_url='https://www.nco.ncep.noaa.gov/pmb/products/gfs/',
+                explanation='Coverage area: Global. Update frequency: Four times daily (00Z, 06Z, 12Z, 18Z) with forecasts out to 16 days. Resolution: 0.25-degree (approximately 28km) grid spacing, providing comprehensive global weather predictions.',
                 last_updated=None,
             ),
         ]
@@ -159,11 +162,29 @@ def seed():
 
         for src in sources:
             for metric in metrics.ALL_METRICS:
-                get_or_create(SourceField(
-                    source_id=src.id,
-                    metric_id=metric.id,
-                    **metric_meta[metric.name],
-                ))
+                # Use a more direct approach with explicit field extraction
+                idx_short_name = None
+                idx_level = None
+                selectors = None
+                
+                # Get the metric name and check if it's in our metadata dictionary
+                metric_name = str(metric.name)  # Convert to string to ensure it's a valid key
+                if metric_name in metric_meta:
+                    meta_dict = metric_meta[metric_name]
+                    idx_short_name = meta_dict.get('idx_short_name')
+                    idx_level = meta_dict.get('idx_level')
+                    selectors = meta_dict.get('selectors')
+                    
+                    # Create the source field with explicit parameters instead of unpacking
+                    get_or_create(SourceField(
+                        source_id=src.id,
+                        metric_id=metric.id,
+                        idx_short_name=idx_short_name,
+                        idx_level=idx_level,
+                        selectors=selectors
+                    ))
+                else:
+                    logging.warning(f"No metadata found for metric '{metric_name}', skipping")
 
         # customization
         nam_refc = SourceField.query.filter(
