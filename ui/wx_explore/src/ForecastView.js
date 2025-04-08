@@ -22,7 +22,10 @@ const metricsToDisplay = [
 ];
 
 function capitalize(s) {
-  return s[0].toUpperCase() + s.substring(1)
+  if (!s || typeof s !== 'string' || s.length === 0) {
+    return '';
+  }
+  return s[0].toUpperCase() + s.substring(1);
 }
 
 export default class ForecastView extends React.Component {
@@ -120,11 +123,35 @@ export default class ForecastView extends React.Component {
   chartjsData() {
     let metrics = {}; // map[metric_id, map[source_id, map[run_time, list]]] 
 
+    // Check if wx data is complete
+    if (!this.state.wx || !this.state.wx.ordered_times || !this.state.wx.data) {
+      return {};
+    }
+
     for (const ts of this.state.wx.ordered_times) {
+      // Check if data for this timestamp exists
+      if (!this.state.wx.data[ts]) {
+        continue;
+      }
+
       for (const data_point of this.state.wx.data[ts]) {
-        const source_field = this.state.source_fields[data_point.src_field_id]
+        // Check if data_point has required properties
+        if (!data_point || !data_point.src_field_id || !data_point.run_time || data_point.value === undefined) {
+          continue;
+        }
+
+        // Check if source_field exists
+        const source_field = this.state.source_fields[data_point.src_field_id];
+        if (!source_field || !source_field.metric_id || !source_field.source_id) {
+          continue;
+        }
+
+        // Check if metric and source exist
         const metric = this.state.metrics[source_field.metric_id];
         const source = this.state.sources[source_field.source_id];
+        if (!metric || !source || !metric.id || !source.id || !metric.units) {
+          continue;
+        }
 
         if (!(metric.id in metrics)) {
           metrics[metric.id] = {};
@@ -138,8 +165,19 @@ export default class ForecastView extends React.Component {
           metrics[metric.id][source.id][data_point.run_time] = [];
         }
 
-        const [val, ] = this.props.converter.convert(data_point.value, metric.units);
-        metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        // Check if converter exists
+        if (!this.props.converter || typeof this.props.converter.convert !== 'function') {
+          console.error("Temperature converter not available");
+          continue;
+        }
+        
+        try {
+          const [val, ] = this.props.converter.convert(data_point.value, metric.units);
+          metrics[metric.id][source.id][data_point.run_time].push({x: new Date(ts * 1000), y: val});
+        } catch (error) {
+          console.error("Error converting value:", error);
+          continue;
+        }
       }
     }
 
@@ -153,6 +191,17 @@ export default class ForecastView extends React.Component {
 
       for (const source_id in metrics[metric_id]) {
         const source = this.state.sources[source_id];
+        
+        // Check if source exists and has required properties
+        if (!source || !source.id || !source.name || !source.short_name) {
+          continue;
+        }
+        
+        // Check if source short_name is in lineColors
+        if (!lineColors[source.short_name]) {
+          console.warn(`No line color defined for source: ${source.short_name}`);
+          continue;
+        }
 
         let earliest_run = 0;
         let latest_run = 0;
@@ -170,17 +219,22 @@ export default class ForecastView extends React.Component {
             alpha = 0.8;
           }
 
-          const run_name = moment.unix(run_time).utc().format("HH[Z] dddd Do") + " " + source.name;
-          const color = 'rgba('+lineColors[source.short_name]+','+alpha+')';
+          try {
+            const run_name = moment.unix(run_time).utc().format("HH[Z] dddd Do") + " " + source.name;
+            const color = 'rgba('+lineColors[source.short_name]+','+alpha+')';
 
-          datasets[metric_id].push({
-            label: run_name,
-            data: metrics[metric_id][source_id][run_time],
-            fill: false,
-            backgroundColor: color,
-            borderColor: color,
-            pointBorderColor: color,
-          });
+            datasets[metric_id].push({
+              label: run_name,
+              data: metrics[metric_id][source.id][run_time],
+              fill: false,
+              backgroundColor: color,
+              borderColor: color,
+              pointBorderColor: color,
+            });
+          } catch (error) {
+            console.error("Error creating dataset:", error);
+            continue;
+          }
         }
       }
     }
@@ -189,7 +243,29 @@ export default class ForecastView extends React.Component {
   }
 
   coreMetricsBox(day) {
+    // Check if summary for the day exists
+    if (!this.state.summary || !this.state.summary[day]) {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md="auto">
+            <p>No data available</p>
+          </Col>
+        </Row>
+      );
+    }
+
     const summary = this.state.summary[day];
+
+    // Check if cloud_cover data exists
+    if (!summary.cloud_cover || !summary.cloud_cover[0]) {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md="auto">
+            <p>Weather data incomplete</p>
+          </Col>
+        </Row>
+      );
+    }
 
     let cloudCoverIcon = '';
     switch (summary.cloud_cover[0].cover) {
@@ -212,6 +288,28 @@ export default class ForecastView extends React.Component {
         cloudCoverIcon = 'wi-alien'; // idk
     }
 
+    // Check if temperature data exists
+    if (!summary.temps || !summary.temps[0] || !summary.high || !summary.low) {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md="auto">
+            <p>Temperature data incomplete</p>
+          </Col>
+        </Row>
+      );
+    }
+
+    // Check if converter exists
+    if (!this.props.converter || typeof this.props.converter.convert !== 'function') {
+      return (
+        <Row className="justify-content-md-center">
+          <Col md="auto">
+            <p>Temperature converter not available</p>
+          </Col>
+        </Row>
+      );
+    }
+
     return (
       <Row className="justify-content-md-center">
         <Col md={2}>
@@ -227,9 +325,22 @@ export default class ForecastView extends React.Component {
   }
 
   summarize(day) {
+    // Check if summary data exists
+    if (!this.state.summary || !this.state.summary[day] || 
+        !this.state.summary[day].summary || !this.state.summary[day].summary.components) {
+      return (
+        <span>No summary data available</span>
+      );
+    }
+
     let components = [];
 
     for (const [index, component] of this.state.summary[day].summary.components.entries()) {
+      // Check if component has required properties
+      if (!component || !component.text) {
+        continue;
+      }
+      
       let text = '';
       if (index === 0) {
         text = capitalize(component.text);
@@ -289,7 +400,12 @@ export default class ForecastView extends React.Component {
       };
 
       for (const metric_id in datasets) {
+        // Check if metric exists and has required properties
         const metric = this.state.metrics[metric_id];
+        if (!metric || !metric.name) {
+          continue;
+        }
+        
         const data = {
           datasets: datasets[metric_id],
         };
@@ -300,14 +416,35 @@ export default class ForecastView extends React.Component {
             text: metric.name,
           },
         };
-        charts.push(
-          <Row>
-            <Col>
-              <LineChart key={metric.name} data={data} options={opts}/>
+        
+        try {
+          charts.push(
+            <Row key={`chart-${metric_id}`}>
+              <Col>
+                <LineChart key={metric.name} data={data} options={opts}/>
+              </Col>
+            </Row>
+          );
+        } catch (error) {
+          console.error("Error creating chart:", error);
+          continue;
+        }
+      };
+    }
+
+    // Check if location exists
+    if (!this.state.location) {
+      return (
+        <div>
+          <Row className="justify-content-md-center">
+            <Col md="auto">
+              <h2>No location selected</h2>
             </Col>
           </Row>
-        );
-      };
+          <hr/>
+          {charts}
+        </div>
+      );
     }
 
     return (
