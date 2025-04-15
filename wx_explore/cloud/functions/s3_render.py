@@ -26,12 +26,18 @@ def func(req: HttpRequest) -> HttpResponse:
             f.write(resp.content)
             f.flush()
 
-        grb = pygrib.open(f.name)
-        msg = grb.read(1)[0]
-        data = msg.data()[0]
+        grb = None
+        try:
+            grb = pygrib.open(f.name)
+            msg = grb.read(1)[0]
+            data = msg.data()[0]
 
-        # flip vertically so north is up
-        data = numpy.int16(data[::-1])
+            # flip vertically so north is up
+            data = numpy.int16(data[::-1])
+        finally:
+            # Ensure the pygrib file handle is properly closed
+            if grb is not None:
+                grb.close()
 
         if 'cm' in req.args:
             try:
