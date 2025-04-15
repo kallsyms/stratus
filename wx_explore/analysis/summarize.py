@@ -93,7 +93,7 @@ class TemperatureEvent(object):
 
 
 class WindEvent(object):
-    # XXX: what units are these in?
+    # Wind speeds are in m/s (meters per second)
     CLASSIFICATIONS = RangeDict({
         range(0, 15): 'light',
         range(15, 30): 'moderate',
