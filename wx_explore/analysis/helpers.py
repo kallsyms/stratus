@@ -60,7 +60,9 @@ def distance_weighted_interpolate(array, x, y):
         values.append(val)
 
     # Convert distances to weights (inverse distance)
-    weights = [1/d for d in distances]
+    # Add small epsilon to prevent division by zero
+    epsilon = 1e-10
+    weights = [1/(d + epsilon) for d in distances]
 
     # Normalize weights to sum to 1
     weight_sum = sum(weights)
